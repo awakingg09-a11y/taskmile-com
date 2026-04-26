@@ -3,91 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskMile - Live Preview</title>
+    <title>TaskMile - Official App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
-        body { font-family: 'Roboto', sans-serif; background-color: #FDFDFD; }
+        body { font-family: 'Roboto', sans-serif; background-color: #FDFDFD; user-select: none; margin: 0; padding-bottom: 70px; }
         .bg-theme-yellow { background-color: #FFCD00; }
+        .bg-theme-green { background-color: #069837; }
         .logo-text { font-weight: 900; font-style: italic; color: #FFCD00; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
         
-        #auth-screen { position: fixed; inset: 0; background: #FFCD00; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .auth-card { background: white; width: 100%; max-width: 350px; padding: 30px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
-        .google-btn { width: 100%; background: white; border: 1px solid #eee; padding: 14px; border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
-        .google-btn:active { transform: scale(0.95); }
-        
-        /* Pulse animation for domain error */
-        .pulse-red { animation: pulse 2s infinite; }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
+        /* Auth Screen */
+        #auth-screen { position: fixed; inset: 0; background: #FFCD00; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .auth-card { background: white; width: 100%; max-width: 350px; padding: 40px 30px; border-radius: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; }
+        .google-btn { width: 100%; background: white; border: 2px solid #f0f0f0; padding: 15px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .google-btn:active { transform: scale(0.95); background: #fafafa; }
+
+        /* Navigation */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #FFCD00; height: 65px; display: flex; justify-content: space-around; align-items: center; border-radius: 25px 25px 0 0; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #000; text-decoration: none; font-size: 10px; font-weight: bold; }
+        .nav-item i { font-size: 20px; margin-bottom: 2px; }
+
+        /* Views */
+        .app-view { display: none; padding: 15px; animation: slideUp 0.3s ease-out; }
+        .app-view.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Profile Card */
+        .profile-card { background: white; border-radius: 35px; border: 1px solid #eee; padding: 30px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
     </style>
 </head>
 <body>
 
-    <!-- Auth Screen -->
+    <!-- Login Screen -->
     <div id="auth-screen">
         <div class="auth-card">
-            <div class="text-5xl logo-text mb-6 italic">TaskMile</div>
-            <h1 class="text-xl font-bold text-gray-800">Swagat Hai!</h1>
-            <p class="text-gray-500 text-sm mb-6">Apne free domain par login karein.</p>
-            
-            <button id="login-btn" onclick="handleGoogleLogin()" class="google-btn">
+            <div class="text-5xl logo-text mb-4 italic">TaskMile</div>
+            <h2 class="text-xl font-bold text-gray-800">Welcome</h2>
+            <p class="text-gray-400 text-sm mb-8">Login karke paise kamana shuru karein</p>
+            <button onclick="handleGoogleLogin()" class="google-btn">
                 <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" class="w-6 h-6">
-                <span id="btn-text">Google Se Login</span>
+                <span>Google Login</span>
             </button>
-            
-            <!-- Domain Error Helper -->
-            <div id="domain-helper" class="hidden mt-6 p-4 bg-red-50 text-red-700 text-[11px] rounded-2xl text-left border border-red-200 pulse-red">
-                <p class="font-bold mb-2 text-xs text-red-800"><i class="fas fa-globe mr-1"></i> Domain Not Authorized!</p>
-                <p class="mb-3">Ise fix karne ke liye Firebase Console mein ye domain add karein:</p>
-                <div class="flex items-center space-x-2 mb-2">
-                    <code id="host-code" class="flex-1 bg-white p-2 border border-red-200 rounded font-bold break-all text-blue-600 text-[10px]"></code>
-                    <button onclick="copyDomain()" class="bg-blue-600 text-white p-2 rounded-lg"><i class="fas fa-copy"></i></button>
-                </div>
-                <p class="text-[9px] text-gray-500">Ise copy karke **Authentication > Settings > Authorized Domains** mein daalein.</p>
-            </div>
         </div>
     </div>
 
-    <!-- Dashboard -->
-    <div id="main-app" style="display: none;">
-        <header class="bg-theme-yellow px-4 py-3 flex justify-between items-center sticky top-0 z-50">
+    <!-- Main App UI -->
+    <div id="main-app" style="display:none;">
+        <header class="bg-theme-yellow p-4 flex justify-between items-center sticky top-0 z-50">
             <div class="text-2xl logo-text">TaskMile</div>
-            <div class="flex items-center space-x-2">
-                <div class="bg-white/30 rounded-full px-3 py-1 flex items-center space-x-1">
-                    <img src="https://cdn-icons-png.flaticon.com/512/1490/1490853.png" class="w-4 h-4">
-                    <span id="balance" class="font-bold text-white text-sm">1,250.00</span>
+            <div class="flex items-center gap-2">
+                <div class="bg-black/10 rounded-full px-3 py-1 flex items-center gap-1 font-bold text-sm">
+                    <span class="text-yellow-600">PKR</span>
+                    <span id="balance">0.00</span>
                 </div>
-                <img id="u-img" src="" class="w-8 h-8 rounded-full border-2 border-white shadow-sm">
+                <img id="u-img-nav" class="w-8 h-8 rounded-full border-2 border-white" src="">
             </div>
         </header>
 
-        <div class="p-6">
-            <div class="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 text-center relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-4">
-                    <span class="bg-green-100 text-green-600 text-[10px] font-bold px-2 py-1 rounded-full italic">VERIFIED</span>
+        <!-- Home Page -->
+        <div id="view-home" class="app-view active">
+            <div class="bg-green-600 rounded-2xl p-4 text-white flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="font-bold">Daily Tasks</h2>
+                    <p class="text-xs opacity-80">Earn up to 5000 today</p>
                 </div>
-                <h2 id="u-name" class="text-3xl font-black text-gray-800 italic">User Name</h2>
-                <p id="u-email" class="text-gray-400 text-xs mt-1 mb-8 tracking-wide"></p>
-                
-                <div class="grid grid-cols-2 gap-3 mb-8">
-                    <div class="bg-gray-50 p-4 rounded-3xl border border-gray-100">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase">Tasks</p>
-                        <p class="text-xl font-black text-gray-700">12</p>
+                <i class="fas fa-coins text-3xl text-yellow-300"></i>
+            </div>
+            
+            <h3 class="font-bold mb-3">Available Tasks</h3>
+            <div class="space-y-3">
+                <!-- Task item -->
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600"><i class="fab fa-youtube"></i></div>
+                        <div>
+                            <p class="text-sm font-bold">Watch Video</p>
+                            <p class="text-[10px] text-gray-400">Time: 30s</p>
+                        </div>
                     </div>
-                    <div class="bg-gray-50 p-4 rounded-3xl border border-gray-100">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase">Rank</p>
-                        <p class="text-xl font-black text-gray-700">#42</p>
+                    <span class="text-green-600 font-bold text-sm">+25.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Page (Jo aapne screenshot mein dekha) -->
+        <div id="view-mine" class="app-view">
+            <div class="profile-card mt-4">
+                <img id="u-img-big" class="w-24 h-24 rounded-full mx-auto border-4 border-yellow-400 mb-4" src="">
+                <h2 id="u-name" class="text-2xl font-black italic">Loading...</h2>
+                <p id="u-email" class="text-gray-400 text-xs mb-8"></p>
+
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-gray-50 p-4 rounded-2xl">
+                        <p class="text-[10px] font-bold text-gray-400">TASKS</p>
+                        <p class="text-xl font-black">12</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-2xl">
+                        <p class="text-[10px] font-bold text-gray-400">RANK</p>
+                        <p class="text-xl font-black">#42</p>
                     </div>
                 </div>
 
-                <button onclick="logout()" class="w-full py-4 bg-gray-100 rounded-3xl font-bold text-gray-500 hover:bg-red-50 hover:text-red-500 transition-all">Sign Out Account</button>
+                <button onclick="logout()" class="w-full py-4 bg-gray-100 rounded-2xl font-bold text-gray-400 hover:text-red-500">Sign Out Account</button>
             </div>
         </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <div class="nav-item" onclick="switchTab('home')">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('mine')">
+                <i class="fas fa-user"></i>
+                <span>Mine</span>
+            </div>
+        </nav>
     </div>
 
     <script type="module">
@@ -107,32 +139,20 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        window.copyDomain = () => {
-            const text = document.getElementById('host-code').innerText;
-            const temp = document.createElement('textarea');
-            temp.value = text;
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand('copy');
-            document.body.removeChild(temp);
-            alert("Domain copy ho gaya! Ab Firebase mein paste karein.");
-        }
-
         window.handleGoogleLogin = async () => {
-            const btnText = document.getElementById('btn-text');
-            btnText.innerText = "Authenticating...";
-            
             try {
                 await signInWithPopup(auth, provider);
             } catch (e) {
-                console.error("Login Error:", e);
-                btnText.innerText = "Google Se Login";
-                document.getElementById('domain-helper').classList.remove('hidden');
-                document.getElementById('host-code').innerText = window.location.hostname || "null.com";
+                console.error("Login Error", e);
             }
         };
 
         window.logout = () => signOut(auth);
+
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + tab).classList.add('active');
+        };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -140,7 +160,8 @@
                 document.getElementById('main-app').style.display = 'block';
                 document.getElementById('u-name').innerText = user.displayName;
                 document.getElementById('u-email').innerText = user.email;
-                document.getElementById('u-img').src = user.photoURL;
+                document.getElementById('u-img-nav').src = user.photoURL;
+                document.getElementById('u-img-big').src = user.photoURL;
             } else {
                 document.getElementById('auth-screen').style.display = 'flex';
                 document.getElementById('main-app').style.display = 'none';
