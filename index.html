@@ -20,8 +20,8 @@
         <div class="text-center p-6">
             <div class="animate-spin text-[#FFCD00] text-6xl mb-6"><i class="fas fa-circle-notch"></i></div>
             <h2 class="text-lg font-black text-gray-800">TASKMILE</h2>
-            <p id="loading-status" class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">Initializing System...</p>
-            <button id="retry-btn" onclick="location.reload()" class="hidden mt-6 bg-black text-white px-6 py-2 rounded-full text-xs font-bold">RETRY CONNECTION</button>
+            <p id="loading-status" class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">Connecting to Server...</p>
+            <button id="retry-btn" onclick="location.reload()" class="hidden mt-6 bg-black text-white px-6 py-2 rounded-full text-xs font-bold shadow-lg">RETRY CONNECTION</button>
         </div>
     </div>
 
@@ -89,7 +89,7 @@
             <div class="text-green-500 text-5xl mb-4"><i class="fas fa-check-circle"></i></div>
             <h3 class="text-xl font-black italic">SUCCESS!</h3>
             <p id="alert-msg" class="text-sm text-gray-500 font-bold mt-2"></p>
-            <button onclick="closeAlert()" class="w-full mt-6 bg-[#FFCD00] py-4 rounded-full font-black text-sm">DONE</button>
+            <button onclick="closeAlert()" class="w-full mt-6 bg-[#FFCD00] py-4 rounded-full font-black text-sm active:scale-95 transition-transform">DONE</button>
         </div>
     </div>
 
@@ -98,26 +98,44 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'taskmile-v3';
+        // Yahan aapki actual Firebase keys daal di hain
+        const firebaseConfig = {
+            apiKey: "AIzaSyB8ojmpCLGwapx2VdC1trWwXQYz08tfos4",
+            authDomain: "taskmile-13678.firebaseapp.com",
+            projectId: "taskmile-13678",
+            storageBucket: "taskmile-13678.firebasestorage.app",
+            messagingSenderId: "489392612402",
+            appId: "1:489392612402:web:b565059c586e4a16af482b"
+        };
 
+        let app, auth, db;
         let userProfileRef = null;
+
+        // Fallback timer in case internet is slow
         let connectionTimeout = setTimeout(() => {
             document.getElementById('loading-status').innerText = "Connection taking too long...";
             document.getElementById('retry-btn').classList.remove('hidden');
-        }, 8000);
+        }, 10000);
 
-        async function initApp() {
-            try {
-                document.getElementById('loading-status').innerText = "Authenticating...";
-                await signInAnonymously(auth);
-            } catch (err) {
-                console.error("Auth error:", err);
-                document.getElementById('loading-status').innerText = "Auth Failed. Try again.";
-            }
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            
+            // Login Start Karein
+            document.getElementById('loading-status').innerText = "Authenticating...";
+            signInAnonymously(auth).catch((error) => {
+                console.error("Auth Error:", error);
+                document.getElementById('loading-status').innerText = "Auth Error. Please Retry.";
+                document.getElementById('retry-btn').classList.remove('hidden');
+                clearTimeout(connectionTimeout);
+            });
+
+        } catch (error) {
+            console.error("Firebase Init Error:", error);
+            document.getElementById('loading-status').innerText = "System Error. Please Retry.";
+            document.getElementById('retry-btn').classList.remove('hidden');
+            clearTimeout(connectionTimeout);
         }
 
         onAuthStateChanged(auth, async (user) => {
@@ -125,7 +143,7 @@
                 clearTimeout(connectionTimeout);
                 document.getElementById('loading-status').innerText = "Fetching Profile...";
                 
-                userProfileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
+                userProfileRef = doc(db, 'users', user.uid);
                 
                 try {
                     const snap = await getDoc(userProfileRef);
@@ -133,10 +151,12 @@
                         await setDoc(userProfileRef, { balance: 0, tasks: 0 });
                     }
 
-                    onSnapshot(userProfileRef, (doc) => {
-                        if (doc.exists()) {
-                            const data = doc.data();
+                    onSnapshot(userProfileRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
                             document.getElementById('balance-display').innerText = (data.balance || 0).toFixed(2);
+                            
+                            // Hide loading screen smoothly
                             document.getElementById('loading-overlay').style.opacity = '0';
                             setTimeout(() => {
                                 document.getElementById('loading-overlay').style.display = 'none';
@@ -147,12 +167,17 @@
                     });
                 } catch (err) {
                     console.error("Database error:", err);
+                    document.getElementById('loading-status').innerText = "Database Error. Ensure Firestore is enabled.";
+                    document.getElementById('retry-btn').classList.remove('hidden');
                 }
             }
         });
 
         window.handleTask = async (reward) => {
-            if (!userProfileRef) return;
+            if (!userProfileRef) {
+                alert("Please wait for connection to complete.");
+                return;
+            }
             try {
                 await updateDoc(userProfileRef, {
                     balance: increment(reward),
@@ -161,13 +186,14 @@
                 document.getElementById('alert-msg').innerText = `You earned ${reward} coins!`;
                 document.getElementById('alert').classList.remove('hidden');
             } catch (err) {
-                alert("Error claiming reward. Check connection.");
+                console.error(err);
+                alert("Error claiming reward. Make sure Firestore rules allow writes.");
             }
         };
 
-        window.closeAlert = () => document.getElementById('alert').classList.add('hidden');
-
-        initApp();
+        window.closeAlert = () => {
+            document.getElementById('alert').classList.add('hidden');
+        };
     </script>
 </body>
 </html>
