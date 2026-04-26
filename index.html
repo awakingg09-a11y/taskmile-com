@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMile - Live Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+        body { font-family: 'Roboto', sans-serif; background-color: #FDFDFD; }
+        .bg-theme-yellow { background-color: #FFCD00; }
+        .logo-text { font-weight: 900; font-style: italic; color: #FFCD00; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
+        
+        #auth-screen { position: fixed; inset: 0; background: #FFCD00; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .auth-card { background: white; width: 100%; max-width: 350px; padding: 30px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        .google-btn { width: 100%; background: white; border: 1px solid #eee; padding: 14px; border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        .google-btn:active { transform: scale(0.95); }
+        
+        /* Pulse animation for domain error */
+        .pulse-red { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Auth Screen -->
+    <div id="auth-screen">
+        <div class="auth-card">
+            <div class="text-5xl logo-text mb-6 italic">TaskMile</div>
+            <h1 class="text-xl font-bold text-gray-800">Swagat Hai!</h1>
+            <p class="text-gray-500 text-sm mb-6">Apne free domain par login karein.</p>
+            
+            <button id="login-btn" onclick="handleGoogleLogin()" class="google-btn">
+                <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" class="w-6 h-6">
+                <span id="btn-text">Google Se Login</span>
+            </button>
+            
+            <!-- Domain Error Helper -->
+            <div id="domain-helper" class="hidden mt-6 p-4 bg-red-50 text-red-700 text-[11px] rounded-2xl text-left border border-red-200 pulse-red">
+                <p class="font-bold mb-2 text-xs text-red-800"><i class="fas fa-globe mr-1"></i> Domain Not Authorized!</p>
+                <p class="mb-3">Ise fix karne ke liye Firebase Console mein ye domain add karein:</p>
+                <div class="flex items-center space-x-2 mb-2">
+                    <code id="host-code" class="flex-1 bg-white p-2 border border-red-200 rounded font-bold break-all text-blue-600 text-[10px]"></code>
+                    <button onclick="copyDomain()" class="bg-blue-600 text-white p-2 rounded-lg"><i class="fas fa-copy"></i></button>
+                </div>
+                <p class="text-[9px] text-gray-500">Ise copy karke **Authentication > Settings > Authorized Domains** mein daalein.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="main-app" style="display: none;">
+        <header class="bg-theme-yellow px-4 py-3 flex justify-between items-center sticky top-0 z-50">
+            <div class="text-2xl logo-text">TaskMile</div>
+            <div class="flex items-center space-x-2">
+                <div class="bg-white/30 rounded-full px-3 py-1 flex items-center space-x-1">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1490/1490853.png" class="w-4 h-4">
+                    <span id="balance" class="font-bold text-white text-sm">1,250.00</span>
+                </div>
+                <img id="u-img" src="" class="w-8 h-8 rounded-full border-2 border-white shadow-sm">
+            </div>
+        </header>
+
+        <div class="p-6">
+            <div class="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4">
+                    <span class="bg-green-100 text-green-600 text-[10px] font-bold px-2 py-1 rounded-full italic">VERIFIED</span>
+                </div>
+                <h2 id="u-name" class="text-3xl font-black text-gray-800 italic">User Name</h2>
+                <p id="u-email" class="text-gray-400 text-xs mt-1 mb-8 tracking-wide"></p>
+                
+                <div class="grid grid-cols-2 gap-3 mb-8">
+                    <div class="bg-gray-50 p-4 rounded-3xl border border-gray-100">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase">Tasks</p>
+                        <p class="text-xl font-black text-gray-700">12</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-3xl border border-gray-100">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase">Rank</p>
+                        <p class="text-xl font-black text-gray-700">#42</p>
+                    </div>
+                </div>
+
+                <button onclick="logout()" class="w-full py-4 bg-gray-100 rounded-3xl font-bold text-gray-500 hover:bg-red-50 hover:text-red-500 transition-all">Sign Out Account</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB8ojmpCLGwapx2VdC1trWwXQYz08tfos4",
+            authDomain: "taskmile-13678.firebaseapp.com",
+            projectId: "taskmile-13678",
+            storageBucket: "taskmile-13678.firebasestorage.app",
+            messagingSenderId: "489392612402",
+            appId: "1:489392612402:web:b565059c586e4a16af482b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        window.copyDomain = () => {
+            const text = document.getElementById('host-code').innerText;
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            alert("Domain copy ho gaya! Ab Firebase mein paste karein.");
+        }
+
+        window.handleGoogleLogin = async () => {
+            const btnText = document.getElementById('btn-text');
+            btnText.innerText = "Authenticating...";
+            
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (e) {
+                console.error("Login Error:", e);
+                btnText.innerText = "Google Se Login";
+                document.getElementById('domain-helper').classList.remove('hidden');
+                document.getElementById('host-code').innerText = window.location.hostname || "null.com";
+            }
+        };
+
+        window.logout = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                document.getElementById('u-name').innerText = user.displayName;
+                document.getElementById('u-email').innerText = user.email;
+                document.getElementById('u-img').src = user.photoURL;
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
