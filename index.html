@@ -3,145 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TaskMile - Test Mode</title>
+    <title>TaskMile - Fixed Connection</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        body { font-family: sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         .nav-active { color: #000 !important; }
         .task-card:active { transform: scale(0.96); transition: 0.1s; }
-        marquee { font-weight: bold; color: #9ca3af; font-size: 10px; }
-        #loading-overlay { background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); }
-        .coin-anim { animation: bounce 0.5s ease-in-out; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        #loading-overlay { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); transition: opacity 0.5s ease; }
     </style>
 </head>
-<body class="max-w-md mx-auto bg-white min-h-screen relative shadow-xl overflow-x-hidden">
+<body class="max-w-md mx-auto bg-white min-h-screen relative shadow-xl">
 
     <!-- Loading Screen -->
     <div id="loading-overlay" class="fixed inset-0 z-[300] flex items-center justify-center">
-        <div class="text-center">
-            <div class="animate-spin text-[#FFCD00] text-5xl mb-4"><i class="fas fa-spinner"></i></div>
-            <p class="text-xs font-black text-gray-400 uppercase tracking-widest">Connecting to Server...</p>
+        <div class="text-center p-6">
+            <div class="animate-spin text-[#FFCD00] text-6xl mb-6"><i class="fas fa-circle-notch"></i></div>
+            <h2 class="text-lg font-black text-gray-800">TASKMILE</h2>
+            <p id="loading-status" class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">Initializing System...</p>
+            <button id="retry-btn" onclick="location.reload()" class="hidden mt-6 bg-black text-white px-6 py-2 rounded-full text-xs font-bold">RETRY CONNECTION</button>
         </div>
     </div>
 
     <!-- Screen 1: Home -->
     <div id="screen-home" class="pb-24">
-        <!-- Header -->
         <div class="bg-[#FFCD00] p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
             <h1 class="text-2xl font-black italic">TaskMile</h1>
-            <div class="flex items-center gap-2">
-                <div class="bg-white/40 px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1">
-                    <span class="coin-anim text-yellow-600">🪙</span>
-                    <span id="balance-display">0.00</span>
-                </div>
+            <div class="bg-white/40 px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1">
+                <span>🪙</span>
+                <span id="balance-display">0.00</span>
             </div>
         </div>
 
-        <!-- Hero Card -->
-        <div class="m-4 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-[30px] p-6 relative overflow-hidden shadow-sm">
-            <div class="relative z-10">
-                <h2 class="text-xl font-black">Test Your Tasks!</h2>
-                <p class="text-[10px] text-gray-500 font-bold uppercase mt-1">Click any task to add coins</p>
-                <div class="mt-4 flex items-center gap-2">
-                    <span class="bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold">ONLINE</span>
-                    <span class="text-gray-400 text-[10px] font-bold">Auto-Saving Enabled</span>
-                </div>
-            </div>
-            <i class="fas fa-bolt absolute -right-2 -bottom-2 text-7xl text-yellow-200/30"></i>
+        <div class="m-4 bg-yellow-50 border border-yellow-200 rounded-[30px] p-6">
+            <h2 class="text-xl font-black">Ready to test?</h2>
+            <p class="text-[10px] text-gray-500 font-bold mt-1">TAP ANY TASK TO ADD COINS INSTANTLY</p>
         </div>
 
-        <!-- Task List Header -->
-        <div class="px-4 py-2 flex justify-between items-center">
-            <h3 class="text-sm font-black uppercase text-gray-400">Available Tasks</h3>
-            <span class="text-[10px] font-bold text-blue-500">View All</span>
-        </div>
-
-        <!-- Task List -->
         <div class="p-4 space-y-4">
-            <!-- Task 1 -->
-            <div onclick="handleTask(50, 'Telegram Task')" class="task-card bg-white border-2 border-gray-50 p-4 rounded-3xl flex items-center gap-4 shadow-sm cursor-pointer hover:border-yellow-200 transition-all">
-                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
-                    <i class="fab fa-telegram-plane text-3xl text-blue-500"></i>
+            <!-- Test Task 1 -->
+            <div onclick="handleTask(500)" class="task-card bg-white border-2 border-gray-100 p-4 rounded-3xl flex items-center gap-4 shadow-sm cursor-pointer active:bg-gray-50">
+                <div class="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-xl">
+                    <i class="fab fa-telegram-plane"></i>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-sm font-black">Join Official Channel</h3>
-                    <p class="text-[10px] text-gray-400 font-bold mt-1">Single Claim</p>
+                    <h3 class="text-sm font-black uppercase">Telegram Test</h3>
+                    <p class="text-[10px] text-gray-400 font-bold">Instant Credit</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-green-600 font-black text-sm">+50.00</span>
-                    <div class="text-[8px] bg-gray-100 px-2 py-0.5 rounded-full font-bold text-gray-400 mt-1">TEST</div>
+                    <span class="text-green-600 font-black text-sm">+500</span>
                 </div>
             </div>
 
-            <!-- Task 2 -->
-            <div onclick="handleTask(1500, 'YouTube Task')" class="task-card bg-white border-2 border-gray-50 p-4 rounded-3xl flex items-center gap-4 shadow-sm cursor-pointer hover:border-yellow-200 transition-all">
-                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center">
-                    <i class="fab fa-youtube text-3xl text-red-600"></i>
+            <!-- Test Task 2 -->
+            <div onclick="handleTask(1000)" class="task-card bg-white border-2 border-gray-100 p-4 rounded-3xl flex items-center gap-4 shadow-sm cursor-pointer active:bg-gray-50">
+                <div class="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-white text-xl">
+                    <i class="fab fa-youtube"></i>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-sm font-black">Subscribe TaskMile</h3>
-                    <p class="text-[10px] text-gray-400 font-bold mt-1">High Reward</p>
+                    <h3 class="text-sm font-black uppercase">YouTube Test</h3>
+                    <p class="text-[10px] text-gray-400 font-bold">High Bonus</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-green-600 font-black text-sm">+1500.00</span>
-                    <div class="text-[8px] bg-gray-100 px-2 py-0.5 rounded-full font-bold text-gray-400 mt-1">TEST</div>
+                    <span class="text-green-600 font-black text-sm">+1000</span>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Screen 2: Profile (Mine) -->
-    <div id="screen-mine" class="hidden pb-24 p-6">
-        <div class="bg-white rounded-[40px] p-8 shadow-xl border border-gray-50 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-32 bg-[#FFCD00] rounded-b-[40px]"></div>
-            <div class="relative z-10">
-                <div class="w-24 h-24 rounded-[30px] border-4 border-white mx-auto shadow-lg mb-4 bg-gray-100 overflow-hidden">
-                    <img src="https://ui-avatars.com/api/?name=Test+User&background=random" alt="Profile">
-                </div>
-                <h2 class="text-2xl font-black italic">Test Account</h2>
-                <p id="user-uid-display" class="text-[10px] text-gray-400 font-mono mt-1">Authenticating...</p>
-
-                <div class="grid grid-cols-2 gap-4 mt-10">
-                    <div class="bg-gray-50 p-5 rounded-[30px] border border-gray-100">
-                        <p class="text-[9px] font-black text-gray-400 uppercase">Total Earned</p>
-                        <p id="profile-balance" class="text-xl font-black text-orange-500">0.00</p>
-                    </div>
-                    <div class="bg-gray-50 p-5 rounded-[30px] border border-gray-100">
-                        <p class="text-[9px] font-black text-gray-400 uppercase">Tasks Done</p>
-                        <p id="task-count" class="text-xl font-black text-blue-600">0</p>
-                    </div>
-                </div>
-
-                <button onclick="location.reload()" class="w-full mt-10 bg-gray-900 text-white py-5 rounded-[30px] font-black text-xs shadow-lg active:scale-95 transition-all">
-                    REFRESH DATA
-                </button>
             </div>
         </div>
     </div>
 
     <!-- Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md h-20 flex items-center justify-around border-t border-gray-100 z-[100]">
-        <button onclick="nav('home')" id="btn-home" class="nav-active flex flex-col items-center gap-1 transition-colors">
-            <i class="fas fa-th-large text-xl"></i>
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t h-20 flex items-center justify-around z-[100]">
+        <button class="nav-active flex flex-col items-center gap-1">
+            <i class="fas fa-home text-xl"></i>
             <span class="text-[8px] font-black">HOME</span>
         </button>
-        <button onclick="nav('mine')" id="btn-mine" class="text-gray-300 flex flex-col items-center gap-1 transition-colors">
-            <i class="fas fa-user-ninja text-xl"></i>
-            <span class="text-[8px] font-black">PROFILE</span>
+        <button class="text-gray-300 flex flex-col items-center gap-1 opacity-50">
+            <i class="fas fa-wallet text-xl"></i>
+            <span class="text-[8px] font-black">WALLET</span>
         </button>
     </nav>
 
-    <!-- Success Modal -->
-    <div id="alert" class="fixed inset-0 bg-black/60 z-[500] hidden flex items-center justify-center p-8 backdrop-blur-sm">
-        <div class="bg-white rounded-[40px] p-8 w-full max-w-xs text-center shadow-2xl transform transition-all">
-            <div id="alert-icon" class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
-                <i class="fas fa-check"></i>
-            </div>
-            <h3 id="alert-title" class="text-xl font-black">Mubarak Ho!</h3>
-            <p id="alert-msg" class="text-sm text-gray-500 font-bold mt-3 px-2">Reward has been added to your account.</p>
-            <button onclick="closeAlert()" class="w-full mt-8 bg-[#FFCD00] py-5 rounded-[30px] font-black text-sm shadow-md active:scale-95 transition-all">BAHOT ACHAY</button>
+    <!-- Custom Alert -->
+    <div id="alert" class="fixed inset-0 bg-black/60 z-[500] hidden flex items-center justify-center p-8">
+        <div class="bg-white rounded-[40px] p-8 w-full max-w-xs text-center">
+            <div class="text-green-500 text-5xl mb-4"><i class="fas fa-check-circle"></i></div>
+            <h3 class="text-xl font-black italic">SUCCESS!</h3>
+            <p id="alert-msg" class="text-sm text-gray-500 font-bold mt-2"></p>
+            <button onclick="closeAlert()" class="w-full mt-6 bg-[#FFCD00] py-4 rounded-full font-black text-sm">DONE</button>
         </div>
     </div>
 
@@ -150,114 +98,76 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Environment Config
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'taskmile-v2';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'taskmile-v3';
 
         let userProfileRef = null;
+        let connectionTimeout = setTimeout(() => {
+            document.getElementById('loading-status').innerText = "Connection taking too long...";
+            document.getElementById('retry-btn').classList.remove('hidden');
+        }, 8000);
 
-        // Initialize Session
-        async function startSession() {
+        async function initApp() {
             try {
+                document.getElementById('loading-status').innerText = "Authenticating...";
                 await signInAnonymously(auth);
             } catch (err) {
-                console.error("Auth Fail:", err);
-                document.getElementById('loading-overlay').innerHTML = `<p class="text-red-500 font-black">Connection Failed!</p>`;
+                console.error("Auth error:", err);
+                document.getElementById('loading-status').innerText = "Auth Failed. Try again.";
             }
         }
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                document.getElementById('user-uid-display').innerText = `ID: ${user.uid.substring(0,10)}...`;
+                clearTimeout(connectionTimeout);
+                document.getElementById('loading-status').innerText = "Fetching Profile...";
                 
-                // Use strict path: /artifacts/{appId}/users/{userId}/profile/data
                 userProfileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
                 
-                const snap = await getDoc(userProfileRef);
-                if (!snap.exists()) {
-                    await setDoc(userProfileRef, {
-                        balance: 0.00,
-                        tasksCompleted: 0,
-                        lastActive: new Date().toISOString()
-                    });
-                }
-
-                // Sync UI with DB
-                onSnapshot(userProfileRef, (doc) => {
-                    if (doc.exists()) {
-                        const data = doc.data();
-                        const bal = (data.balance || 0).toFixed(2);
-                        document.getElementById('balance-display').innerText = bal;
-                        document.getElementById('profile-balance').innerText = bal;
-                        document.getElementById('task-count').innerText = data.tasksCompleted || 0;
-                        document.getElementById('loading-overlay').classList.add('hidden');
+                try {
+                    const snap = await getDoc(userProfileRef);
+                    if (!snap.exists()) {
+                        await setDoc(userProfileRef, { balance: 0, tasks: 0 });
                     }
-                }, (error) => console.error("Snapshot Error:", error));
+
+                    onSnapshot(userProfileRef, (doc) => {
+                        if (doc.exists()) {
+                            const data = doc.data();
+                            document.getElementById('balance-display').innerText = (data.balance || 0).toFixed(2);
+                            document.getElementById('loading-overlay').style.opacity = '0';
+                            setTimeout(() => {
+                                document.getElementById('loading-overlay').style.display = 'none';
+                            }, 500);
+                        }
+                    }, (err) => {
+                        console.error("Snapshot error:", err);
+                    });
+                } catch (err) {
+                    console.error("Database error:", err);
+                }
             }
         });
 
-        // Global Task Function
-        window.handleTask = async (reward, name) => {
+        window.handleTask = async (reward) => {
             if (!userProfileRef) return;
-
             try {
-                // Instantly show loading feedback on element
-                const element = event.currentTarget;
-                element.classList.add('opacity-50', 'pointer-events-none');
-
-                // Update Firestore
                 await updateDoc(userProfileRef, {
                     balance: increment(reward),
-                    tasksCompleted: increment(1)
+                    tasks: increment(1)
                 });
-
-                showCustomAlert("Coins Mil Gaye!", `${reward} coins aapke balance mein add ho chuke hain.`, true);
-                element.classList.remove('opacity-50', 'pointer-events-none');
+                document.getElementById('alert-msg').innerText = `You earned ${reward} coins!`;
+                document.getElementById('alert').classList.remove('hidden');
             } catch (err) {
-                showCustomAlert("Error", "Coins claim nahi ho sakay. Internet check karein.", false);
+                alert("Error claiming reward. Check connection.");
             }
         };
 
-        startSession();
-    </script>
+        window.closeAlert = () => document.getElementById('alert').classList.add('hidden');
 
-    <script>
-        // Navigation Logic
-        function nav(target) {
-            document.getElementById('screen-home').classList.toggle('hidden', target !== 'home');
-            document.getElementById('screen-mine').classList.toggle('hidden', target !== 'mine');
-            
-            document.getElementById('btn-home').classList.toggle('nav-active', target === 'home');
-            document.getElementById('btn-home').classList.toggle('text-gray-300', target !== 'home');
-            document.getElementById('btn-mine').classList.toggle('nav-active', target === 'mine');
-            document.getElementById('btn-mine').classList.toggle('text-gray-300', target !== 'mine');
-        }
-
-        // Modal Logic
-        function showCustomAlert(title, msg, success) {
-            document.getElementById('alert-title').innerText = title;
-            document.getElementById('alert-msg').innerText = msg;
-            const icon = document.getElementById('alert-icon');
-            
-            if (success) {
-                icon.className = "w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl";
-                icon.innerHTML = '<i class="fas fa-check"></i>';
-            } else {
-                icon.className = "w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl";
-                icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-            }
-            
-            const alertBox = document.getElementById('alert');
-            alertBox.classList.remove('hidden');
-            setTimeout(() => alertBox.firstElementChild.classList.remove('scale-90'), 10);
-        }
-
-        function closeAlert() {
-            document.getElementById('alert').classList.add('hidden');
-        }
+        initApp();
     </script>
 </body>
 </html>
