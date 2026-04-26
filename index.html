@@ -3,110 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TaskMile - Debug Mode</title>
+    <title>TaskMile - Google Login Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
-        .nav-active { color: #000 !important; }
-        .task-card:active { transform: scale(0.96); transition: 0.1s; }
-        #loading-overlay { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); transition: opacity 0.5s ease; }
+        body { font-family: sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        #loading-overlay { background: #FFCD00; z-index: 10000; transition: opacity 0.5s; }
+        .google-btn { 
+            background: white; border-radius: 16px; padding: 14px; 
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            width: 100%; font-weight: 800; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .google-btn:active { transform: scale(0.98); }
     </style>
 </head>
-<body class="max-w-md mx-auto bg-white min-h-screen relative shadow-xl">
+<body class="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl">
 
-    <!-- Loading Screen with Debug Info -->
-    <div id="loading-overlay" class="fixed inset-0 z-[300] flex items-center justify-center">
-        <div class="text-center p-6 w-full">
-            <div id="loading-icon" class="animate-spin text-[#FFCD00] text-6xl mb-6"><i class="fas fa-circle-notch"></i></div>
-            <h2 class="text-lg font-black text-gray-800 tracking-widest">TASKMILE</h2>
-            <p id="loading-status" class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">Initializing System...</p>
-            
-            <!-- Error Box -->
-            <div id="error-box" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-left">
-                <p class="text-[10px] font-black text-red-600 uppercase mb-1">Error Detected:</p>
-                <p id="error-message" class="text-xs text-red-500 font-mono break-all"></p>
-                <button onclick="location.reload()" class="w-full mt-4 bg-black text-white py-3 rounded-xl text-[10px] font-black">RETRY CONNECTION</button>
+    <!-- Auth & Loading Screen -->
+    <div id="loading-overlay" class="fixed inset-0 flex flex-col items-center justify-center p-8 text-center">
+        <div id="loader-content">
+            <div class="animate-bounce mb-4 text-white text-6xl">
+                <i class="fas fa-coins"></i>
             </div>
+            <h1 class="text-4xl font-black italic mb-2 text-black">TaskMile</h1>
+            <p id="status-text" class="text-[10px] font-bold text-black/60 uppercase tracking-widest">Checking Authentication...</p>
+        </div>
 
-            <!-- Helpful Tip -->
-            <div id="setup-tip" class="hidden mt-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl text-left">
-                <p class="text-[10px] font-black text-blue-600 uppercase mb-1">Quick Fix Tip:</p>
-                <p class="text-[11px] text-blue-800 leading-relaxed">Go to Firebase Console > Auth > Settings > Authorized Domains and add: <br><b>awakingg09-a11y.github.io</b></p>
+        <!-- Hidden Login Box -->
+        <div id="login-container" class="hidden w-full mt-10">
+            <div class="bg-white/20 p-6 rounded-[32px] backdrop-blur-sm">
+                <p class="text-sm font-bold mb-6 text-black">Sign in to start earning</p>
+                <button id="google-login-btn" class="google-btn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
+                    <span>Continue with Google</span>
+                </button>
             </div>
+        </div>
+
+        <!-- Debug Error Box -->
+        <div id="error-box" class="hidden mt-6 p-4 bg-red-500 text-white rounded-2xl text-left w-full shadow-lg">
+            <p class="text-[10px] font-black uppercase mb-1">Auth Error Found:</p>
+            <p id="error-msg" class="text-[11px] font-mono break-all"></p>
+            <p class="text-[9px] mt-2 opacity-80 italic">Tip: Add this URL to "Authorized Domains" in Firebase Settings.</p>
         </div>
     </div>
 
-    <!-- Main App Screen -->
-    <div id="screen-home" class="pb-24">
-        <div class="bg-[#FFCD00] p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+    <!-- Main App UI -->
+    <div id="app-content" class="hidden">
+        <header class="bg-[#FFCD00] p-4 flex justify-between items-center sticky top-0 z-50">
             <h1 class="text-2xl font-black italic">TaskMile</h1>
-            <div class="bg-white/40 px-3 py-1.5 rounded-full text-xs font-black flex items-center gap-1">
-                <span>🪙</span>
-                <span id="balance-display">0.00</span>
+            <div class="bg-white/40 px-4 py-2 rounded-full flex items-center gap-2">
+                <span class="text-sm font-black" id="balance-val">0.00</span>
+                <span class="text-xs">🪙</span>
             </div>
-        </div>
+        </header>
 
-        <div class="m-4 bg-yellow-50 border border-yellow-200 rounded-[30px] p-6">
-            <h2 class="text-xl font-black">Ready to test?</h2>
-            <p class="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-wider">Tap a task to earn instantly</p>
-        </div>
-
-        <div class="p-4 space-y-4">
-            <div onclick="handleTask(500)" class="task-card bg-white border-2 border-gray-100 p-4 rounded-3xl flex items-center gap-4 shadow-sm cursor-pointer active:bg-gray-50">
-                <div class="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-xl">
-                    <i class="fab fa-telegram-plane"></i>
+        <div class="p-4">
+            <!-- Balance Card -->
+            <div class="bg-black text-white p-6 rounded-[32px] mb-6 shadow-xl relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-[10px] font-bold text-yellow-400 uppercase tracking-widest mb-1">Wallet Balance</p>
+                    <h2 class="text-4xl font-black italic">₹<span id="stat-balance">0.00</span></h2>
+                    <div class="mt-4 flex items-center gap-3">
+                        <img id="user-avatar" class="w-6 h-6 rounded-full border border-white/20" src="">
+                        <span id="user-display-name" class="text-[10px] font-bold opacity-70">User</span>
+                    </div>
                 </div>
-                <div class="flex-1">
-                    <h3 class="text-sm font-black uppercase">Telegram Channel</h3>
-                    <p class="text-[10px] text-gray-400 font-bold">Join and earn 500</p>
-                </div>
-                <div class="text-right">
-                    <span class="text-green-600 font-black text-sm">+500</span>
-                </div>
+                <i class="fas fa-wallet absolute -right-4 -bottom-4 text-8xl opacity-10 rotate-12"></i>
             </div>
 
-            <div onclick="handleTask(1000)" class="task-card bg-white border-2 border-gray-100 p-4 rounded-3xl flex items-center gap-4 shadow-sm cursor-pointer active:bg-gray-50">
-                <div class="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-white text-xl">
-                    <i class="fab fa-youtube"></i>
-                </div>
-                <div class="flex-1">
-                    <h3 class="text-sm font-black uppercase">YouTube Video</h3>
-                    <p class="text-[10px] text-gray-400 font-bold">Watch and earn 1000</p>
-                </div>
-                <div class="text-right">
-                    <span class="text-green-600 font-black text-sm">+1000</span>
+            <h3 class="font-black text-gray-800 mb-4 px-2">TASKS FOR YOU</h3>
+            
+            <div class="space-y-3">
+                <div onclick="alert('Task tracking starting...')" class="bg-white p-5 rounded-[24px] border border-gray-100 flex items-center gap-4 shadow-sm active:bg-gray-50">
+                    <div class="w-12 h-12 bg-blue-500 text-white flex items-center justify-center rounded-2xl text-xl shadow-lg shadow-blue-200">
+                        <i class="fab fa-telegram-plane"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-xs font-black">TELEGRAM BOOST</p>
+                        <p class="text-[10px] text-gray-400">Join & stay for 24h</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-black text-green-600">+ ₹50</div>
+                        <div class="text-[8px] text-gray-300 font-bold uppercase">Ready</div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t h-20 flex items-center justify-around z-[100]">
-        <button class="nav-active flex flex-col items-center gap-1">
-            <i class="fas fa-home text-xl"></i>
-            <span class="text-[8px] font-black">HOME</span>
-        </button>
-        <button class="text-gray-300 flex flex-col items-center gap-1 opacity-50">
-            <i class="fas fa-wallet text-xl"></i>
-            <span class="text-[8px] font-black">WALLET</span>
-        </button>
-    </nav>
-
-    <!-- Custom Alert -->
-    <div id="alert" class="fixed inset-0 bg-black/60 z-[500] hidden flex items-center justify-center p-8">
-        <div class="bg-white rounded-[40px] p-8 w-full max-w-xs text-center">
-            <div class="text-green-500 text-5xl mb-4"><i class="fas fa-check-circle"></i></div>
-            <h3 class="text-xl font-black italic">SUCCESS!</h3>
-            <p id="alert-msg" class="text-sm text-gray-500 font-bold mt-2"></p>
-            <button onclick="closeAlert()" class="w-full mt-6 bg-[#FFCD00] py-4 rounded-full font-black text-sm active:scale-95 transition-transform">DONE</button>
+            <button onclick="logout()" class="w-full mt-10 py-4 text-gray-400 text-[10px] font-black uppercase tracking-widest">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout Account
+            </button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB8ojmpCLGwapx2VdC1trWwXQYz08tfos4",
@@ -117,86 +110,80 @@
             appId: "1:489392612402:web:b565059c586e4a16af482b"
         };
 
-        const statusEl = document.getElementById('loading-status');
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        const statusText = document.getElementById('status-text');
+        const loginContainer = document.getElementById('login-container');
         const errorBox = document.getElementById('error-box');
-        const errorMsg = document.getElementById('error-message');
-        const loadingIcon = document.getElementById('loading-icon');
-        const setupTip = document.getElementById('setup-tip');
+        const errorMsg = document.getElementById('error-msg');
+        const appContent = document.getElementById('app-content');
+        const loadingOverlay = document.getElementById('loading-overlay');
 
-        function showError(msg) {
-            statusEl.innerText = "Connection Failed";
-            loadingIcon.classList.add('hidden');
+        // Capture Redirect Error
+        getRedirectResult(auth).catch((error) => {
+            console.error(error);
             errorBox.classList.remove('hidden');
-            errorMsg.innerText = msg;
-            if(msg.includes('auth/unauthorized-domain')) {
-                setupTip.classList.remove('hidden');
-            }
-        }
+            errorMsg.innerText = `${error.code}: ${error.message}`;
+            statusText.innerText = "Login Failed";
+        });
 
-        try {
-            statusEl.innerText = "Connecting to Firebase...";
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
+        // Google Login Trigger
+        document.getElementById('google-login-btn').onclick = () => {
+            signInWithRedirect(auth, provider);
+        };
 
-            let userProfileRef = null;
-
-            statusEl.innerText = "Authenticating Session...";
-            signInAnonymously(auth).catch((error) => {
-                showError(error.code + ": " + error.message);
-            });
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    statusEl.innerText = "Loading User Data...";
-                    userProfileRef = doc(db, 'users', user.uid);
-                    
-                    try {
-                        const snap = await getDoc(userProfileRef);
-                        if (!snap.exists()) {
-                            await setDoc(userProfileRef, { balance: 0, tasks: 0 });
-                        }
-
-                        onSnapshot(userProfileRef, (docSnap) => {
-                            if (docSnap.exists()) {
-                                const data = docSnap.data();
-                                document.getElementById('balance-display').innerText = (data.balance || 0).toFixed(2);
-                                
-                                // All OK - Hide Overlay
-                                document.getElementById('loading-overlay').style.opacity = '0';
-                                setTimeout(() => {
-                                    document.getElementById('loading-overlay').style.display = 'none';
-                                }, 500);
-                            }
-                        }, (err) => {
-                            showError("Firestore Error: " + err.message);
-                        });
-                    } catch (err) {
-                        showError("Database Error: " + err.message);
-                    }
-                }
-            });
-
-            window.handleTask = async (reward) => {
-                if (!userProfileRef) return;
+        // Auth Watcher
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                statusText.innerText = "Accessing Database...";
+                const userRef = doc(db, 'users', user.uid);
+                
                 try {
-                    await updateDoc(userProfileRef, {
-                        balance: increment(reward),
-                        tasks: increment(1)
+                    const snap = await getDoc(userRef);
+                    if (!snap.exists()) {
+                        await setDoc(userRef, { 
+                            balance: 0, 
+                            tasks: 0, 
+                            email: user.email,
+                            name: user.displayName,
+                            photo: user.photoURL
+                        });
+                    }
+
+                    // UI Updates
+                    document.getElementById('user-avatar').src = user.photoURL || 'https://www.w3schools.com/howto/img_avatar.png';
+                    document.getElementById('user-display-name').innerText = user.displayName || user.email;
+                    
+                    loadingOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingOverlay.classList.add('hidden');
+                        appContent.classList.remove('hidden');
+                    }, 500);
+
+                    // Sync Data
+                    onSnapshot(userRef, (docSnap) => {
+                        const data = docSnap.data();
+                        if(data) {
+                            document.getElementById('balance-val').innerText = (data.balance || 0).toFixed(2);
+                            document.getElementById('stat-balance').innerText = (data.balance || 0).toFixed(2);
+                        }
                     });
-                    document.getElementById('alert-msg').innerText = `Successfully earned ${reward} coins!`;
-                    document.getElementById('alert').classList.remove('hidden');
-                } catch (err) {
-                    alert("Error: " + err.message);
+
+                } catch (e) {
+                    errorBox.classList.remove('hidden');
+                    errorMsg.innerText = "Firestore Error: " + e.message;
                 }
-            };
+            } else {
+                statusText.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+            }
+        });
 
-        } catch (globalError) {
-            showError("System Crash: " + globalError.message);
-        }
-
-        window.closeAlert = () => {
-            document.getElementById('alert').classList.add('hidden');
+        window.logout = () => {
+            signOut(auth).then(() => location.reload());
         };
     </script>
 </body>
