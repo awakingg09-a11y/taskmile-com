@@ -1,302 +1,248 @@
-import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  signOut 
-} from 'firebase/auth';
-import { 
-  getFirestore, 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  onSnapshot,
-  increment,
-  addDoc
-} from 'firebase/firestore';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMile - Earn Daily</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; }
+        .tab-active { color: #000 !important; transform: scale(1.1); }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        .reward-gradient { background: linear-gradient(135deg, #FFCD00 0%, #FF9900 100%); }
+    </style>
+</head>
+<body class="max-w-md mx-auto shadow-2xl min-h-screen pb-24">
 
-// YOUR ACTUAL FIREBASE CONFIG CONNECTED
-const firebaseConfig = {
-  apiKey: "AIzaSyB8ojmpCLGwapx2VdC1trWwXQYz08tfos4",
-  authDomain: "taskmile-13678.firebaseapp.com",
-  projectId: "taskmile-13678",
-  storageBucket: "taskmile-13678.firebasestorage.app",
-  messagingSenderId: "489392612402",
-  appId: "1:489392612402:web:b565059c586e4a16af482b",
-  measurementId: "G-FG7HLYQG70"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'taskmile-v1';
-
-const App = () => {
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState({ balance: 0, tasksCompleted: 0 });
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('home');
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('EasyPaisa');
-  const [accountNumber, setAccountNumber] = useState('');
-
-  // 1. Auth Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
-        await ensureUserExists(user);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // 2. Real-time Data Sync (Your Personal Firestore)
-  useEffect(() => {
-    if (!user) return;
-
-    // Path Rules strictly followed for your project
-    const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-    const unsubUser = onSnapshot(userDocRef, (doc) => {
-      if (doc.exists()) setUserData(doc.data());
-    }, (err) => console.error("Firestore Error:", err));
-
-    const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', 'tasks');
-    const unsubTasks = onSnapshot(tasksRef, (snapshot) => {
-      const tasksList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setTasks(tasksList.length > 0 ? tasksList : getInitialTasks());
-    });
-
-    return () => { unsubUser(); unsubTasks(); };
-  }, [user]);
-
-  const ensureUserExists = async (user) => {
-    const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-    const snap = await getDoc(userDocRef);
-    if (!snap.exists()) {
-      await setDoc(userDocRef, {
-        name: user.displayName,
-        email: user.email,
-        balance: 0,
-        tasksCompleted: 0,
-        joinedAt: new Date().toISOString()
-      });
-    }
-  };
-
-  const handleLogin = async () => {
-    try {
-      setLoading(true);
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login Error", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const completeTask = async (taskId, reward) => {
-    if (!user) return;
-    try {
-      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-      await updateDoc(userDocRef, {
-        balance: increment(reward),
-        tasksCompleted: increment(1)
-      });
-      alert(`Mubarak ho! ${reward} coins aapke account mein add ho gaye.`);
-    } catch (e) {
-      console.error("Task Update Error", e);
-    }
-  };
-
-  const handleWithdraw = async (e) => {
-    e.preventDefault();
-    if (!user || !withdrawAmount || !accountNumber) return;
-    
-    const amount = parseFloat(withdrawAmount);
-    if (amount > userData.balance) {
-      alert("Aapke paas itne coins nahi hain!");
-      return;
-    }
-
-    try {
-      const withdrawRef = collection(db, 'artifacts', appId, 'public', 'data', 'withdrawals');
-      await addDoc(withdrawRef, {
-        userId: user.uid,
-        userName: user.displayName,
-        amount: amount,
-        method: paymentMethod,
-        number: accountNumber,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      });
-
-      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
-      await updateDoc(userDocRef, {
-        balance: increment(-amount)
-      });
-
-      alert("Withdrawal request send ho gayi hai!");
-      setWithdrawAmount('');
-      setAccountNumber('');
-      setActiveTab('home');
-    } catch (err) {
-      console.error("Withdraw error:", err);
-    }
-  };
-
-  const getInitialTasks = () => [
-    { id: 't1', title: 'Follow Telegram Channel', reward: 50, left: 9820, type: 'TM' },
-    { id: 't2', title: 'Subscribe Youtube', reward: 100, left: 5400, type: 'YT' },
-    { id: 't3', title: 'Daily Login Bonus', reward: 10, left: 'Daily', type: 'TM' }
-  ];
-
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#FFCD00] font-black italic">TASKMILE...</div>;
-
-  if (!user) {
-    return (
-      <div className="h-screen w-full bg-[#FFCD00] flex flex-col items-center justify-center p-6">
-        <div className="bg-white w-full max-w-sm rounded-[40px] p-10 text-center shadow-2xl">
-          <h1 className="text-5xl font-black italic mb-2">TaskMile</h1>
-          <button onClick={handleLogin} className="w-full bg-white border py-3 rounded-xl flex items-center justify-center gap-3 font-bold mt-10 shadow-sm active:scale-95">
-            <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" className="w-5 h-5" alt="Google" />
-            Continue with Google
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#FDFDFD] max-w-md mx-auto relative pb-20">
-      <header className="bg-[#FFCD00] px-4 py-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-        <div className="text-2xl font-black italic">TaskMile</div>
-        <div className="flex items-center gap-2">
-          <div className="bg-white/30 px-3 py-1 rounded-full text-sm font-bold tracking-wider">
-            🪙 {userData.balance?.toFixed(0)}
-          </div>
-          <img src={user.photoURL} className="w-8 h-8 rounded-full border-2 border-white shadow-sm" alt="Profile" />
-        </div>
-      </header>
-
-      {activeTab === 'home' && (
-        <div className="p-4">
-          <div className="bg-[#069837] text-white p-3 rounded-lg mb-4 text-[10px] font-bold flex justify-between items-center">
-            <span>Download TaskMile App</span>
-            <span>{">>>"}</span>
-          </div>
-
-          <div className="bg-yellow-50 p-5 rounded-3xl border border-yellow-100 flex mb-4 items-center">
-            <div className="flex-1">
-              <h2 className="text-xl font-black">Earn Daily Coins</h2>
-              <p className="text-[10px] text-gray-500 font-bold">Complete tasks to withdraw PKR</p>
-              <button className="bg-green-500 text-white px-4 py-2 rounded-full text-[10px] font-black mt-4 shadow-lg active:scale-95">START EARNING</button>
-            </div>
-            <img src="https://cdn-icons-png.flaticon.com/512/2622/2622830.png" className="w-20 h-20" alt="Coin" />
-          </div>
-
-          <div className="space-y-3">
-            {tasks.map(task => (
-              <div key={task.id} onClick={() => completeTask(task.id, task.reward)} className="bg-white border p-4 rounded-2xl flex justify-between items-center cursor-pointer active:bg-gray-50 shadow-sm">
-                <div className="flex gap-3 items-center">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center font-bold text-blue-600 italic">{task.type}</div>
-                  <div>
-                    <h4 className="font-bold text-sm">{task.title}</h4>
-                    <span className="text-[9px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded font-black">HIGH REWARD</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-red-500 font-black">+{task.reward}</p>
-                  <p className="text-[8px] text-gray-400 font-bold">{task.left} left</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'withdraw' && (
-        <div className="p-6">
-          <h2 className="text-2xl font-black italic mb-6">Withdrawal</h2>
-          <div className="bg-orange-50 p-6 rounded-3xl mb-6 text-center border border-orange-100">
-            <p className="text-[10px] text-orange-400 font-black uppercase">Your Balance</p>
-            <p className="text-4xl font-black text-orange-600">🪙 {userData.balance}</p>
-          </div>
-
-          <form onSubmit={handleWithdraw} className="space-y-4">
-            <select 
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full p-4 bg-gray-50 border-none rounded-2xl font-bold"
-            >
-              <option>EasyPaisa</option>
-              <option>JazzCash</option>
-            </select>
-            <input 
-              type="text"
-              placeholder="Account Number (03xxxxxxxxx)"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
-              className="w-full p-4 bg-gray-50 border-none rounded-2xl font-bold"
-              required
-            />
-            <input 
-              type="number"
-              placeholder="Amount to Withdraw"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(e.target.value)}
-              className="w-full p-4 bg-gray-50 border-none rounded-2xl font-bold"
-              required
-            />
-            <button type="submit" className="w-full bg-[#FFCD00] py-4 rounded-2xl font-black shadow-lg shadow-yellow-100">
-              WITHDRAW NOW
+    <!-- Auth / Splash Screen (Initial) -->
+    <div id="auth-screen" class="fixed inset-0 bg-[#FFCD00] z-[100] flex flex-col items-center justify-center p-6 transition-all duration-500">
+        <div class="bg-white w-full rounded-[40px] p-10 text-center shadow-2xl">
+            <h1 class="text-5xl font-black italic mb-2 italic">TaskMile</h1>
+            <p class="text-gray-400 font-bold text-xs mb-10 tracking-widest uppercase">Earn Coins Daily</p>
+            <button onclick="login()" class="w-full bg-white border-2 border-gray-100 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-gray-50 transition-all active:scale-95 shadow-sm">
+                <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" class="w-6 h-6" alt="Google">
+                Login with Google
             </button>
-          </form>
         </div>
-      )}
-
-      {activeTab === 'mine' && (
-        <div className="p-6 text-center">
-          <img src={user.photoURL} className="w-24 h-24 rounded-full border-4 border-[#FFCD00] mx-auto shadow-xl" alt="User" />
-          <h2 className="text-2xl font-black italic mt-4">{user.displayName}</h2>
-          <div className="grid grid-cols-2 gap-4 mt-8">
-            <div className="bg-gray-50 p-4 rounded-2xl border">
-              <p className="text-[10px] font-black text-gray-400 uppercase">Total Earned</p>
-              <p className="text-xl font-black">Rs. {(userData.balance / 10).toFixed(0)}</p>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-2xl border">
-              <p className="text-[10px] font-black text-gray-400 uppercase">Tasks Done</p>
-              <p className="text-xl font-black">{userData.tasksCompleted}</p>
-            </div>
-          </div>
-          <button onClick={() => signOut(auth)} className="w-full bg-red-50 text-red-600 py-4 rounded-2xl font-bold mt-10 active:bg-red-100">Sign Out</button>
-        </div>
-      )}
-
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#FFCD00] h-16 flex items-center justify-around rounded-t-3xl shadow-2xl">
-        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center ${activeTab === 'home' ? 'text-black' : 'text-black/40'}`}>
-          <i className="fas fa-home"></i><span className="text-[9px] font-black mt-1 uppercase">Home</span>
-        </button>
-        <div className="relative -mt-10" onClick={() => setActiveTab('withdraw')}>
-          <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white shadow-xl border-4 border-[#FFCD00] active:scale-90 transition-transform">
-            <i className="fas fa-bolt"></i>
-          </div>
-        </div>
-        <button onClick={() => setActiveTab('mine')} className={`flex flex-col items-center ${activeTab === 'mine' ? 'text-black' : 'text-black/40'}`}>
-          <i className="fas fa-user"></i><span className="text-[9px] font-black mt-1 uppercase">Mine</span>
-        </button>
-      </nav>
     </div>
-  );
-};
 
-export default App;
+    <!-- Main App Content -->
+    <div id="app-content" class="hidden">
+        <!-- Header -->
+        <header class="bg-[#FFCD00] px-5 py-4 flex justify-between items-center sticky top-0 z-50">
+            <h1 class="text-2xl font-black italic">TaskMile</h1>
+            <div class="flex items-center gap-3">
+                <div class="bg-white/40 px-3 py-1 rounded-full flex items-center gap-1">
+                    <span class="text-sm font-black">🪙 <span id="user-balance">0.00</span></span>
+                </div>
+                <img id="user-avatar" src="https://ui-avatars.com/api/?name=User" class="w-9 h-9 rounded-full border-2 border-white shadow-md">
+            </div>
+        </header>
+
+        <!-- Green App Banner -->
+        <div class="bg-[#069837] text-white p-3 mx-4 mt-4 rounded-xl flex justify-between items-center text-[11px] font-bold cursor-pointer">
+            <div class="flex items-center gap-2">
+                <div class="bg-white/20 p-1.5 rounded-lg">
+                    <i class="fas fa-download"></i>
+                </div>
+                <span>Download TaskMile App for better experience</span>
+            </div>
+            <i class="fas fa-chevron-right text-[8px] opacity-50"></i>
+        </div>
+
+        <!-- Promo Banner (Image placeholder from screenshot) -->
+        <div class="mx-4 mt-4 relative rounded-[32px] overflow-hidden bg-yellow-50 border border-yellow-100 p-6 flex items-center">
+            <div class="z-10 relative">
+                <h2 class="text-xl font-black leading-tight">Complete Small Tasks</h2>
+                <p class="text-[10px] font-bold text-gray-500 mt-1">Daily Tasks, Limited Spots</p>
+                <div class="mt-3 flex items-center gap-2 text-orange-500 font-black text-sm">
+                    <span>💰 600 - 3,000 Coins Daily</span>
+                </div>
+                <button class="mt-4 bg-[#069837] text-white px-6 py-2 rounded-full text-[10px] font-black shadow-lg">GET STARTED</button>
+            </div>
+            <img src="https://cdn-icons-png.flaticon.com/512/2622/2622830.png" class="w-24 h-24 absolute right-2 bottom-2 opacity-80" alt="coins">
+        </div>
+
+        <!-- Scrolling Ticker -->
+        <div class="mx-4 mt-4 flex items-center gap-2 text-[10px] font-bold text-gray-400 italic">
+            <i class="fas fa-volume-up text-orange-400"></i>
+            <marquee>User Ali*** just withdrew 500 PKR ... New Task: Subscribe Youtube added ...</marquee>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex px-4 mt-6 gap-2" id="main-tabs">
+            <button onclick="switchTab('top')" class="flex-1 bg-blue-600 text-white py-2 rounded-xl text-[11px] font-black shadow-lg shadow-blue-100">TOP</button>
+            <button class="flex-1 bg-white border text-gray-400 py-2 rounded-xl text-[11px] font-black">NEW</button>
+            <button class="flex-1 bg-white border text-gray-400 py-2 rounded-xl text-[11px] font-black">HIGH</button>
+        </div>
+
+        <!-- Task List -->
+        <div id="home-view" class="p-4 space-y-4">
+            <!-- Task 1 -->
+            <div onclick="completeTask('t1', 50)" class="bg-white rounded-[24px] p-4 border border-gray-100 shadow-sm flex items-center gap-4 active:scale-95 transition-all">
+                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center relative">
+                    <span class="absolute -top-2 -left-2 bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-md font-black">HOT</span>
+                    <i class="fab fa-telegram text-2xl text-blue-500"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-black text-gray-800">Follow Official Channel</h4>
+                    <div class="flex gap-2 mt-1">
+                        <span class="text-[8px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded font-black uppercase">Official</span>
+                        <span class="text-[8px] bg-green-50 text-green-500 px-2 py-0.5 rounded font-black uppercase">Daily</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-orange-500 font-black text-sm">+50.00</p>
+                    <p class="text-[8px] text-gray-300 font-bold italic">9824 left</p>
+                </div>
+            </div>
+
+            <!-- Task 2 -->
+            <div onclick="completeTask('t2', 1500)" class="bg-white rounded-[24px] p-4 border border-gray-100 shadow-sm flex items-center gap-4 active:scale-95 transition-all">
+                <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center relative">
+                    <span class="absolute -top-2 -left-2 bg-black text-white text-[8px] px-1.5 py-0.5 rounded-md font-black">TOP</span>
+                    <i class="fab fa-youtube text-2xl text-red-600"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-black text-gray-800">Task1 Cz777 Subscribe</h4>
+                    <div class="flex gap-2 mt-1">
+                        <span class="text-[8px] bg-purple-50 text-purple-500 px-2 py-0.5 rounded font-black uppercase">Premium</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-orange-500 font-black text-sm">+1500.00</p>
+                    <p class="text-[8px] text-gray-300 font-bold italic">993 left</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mine View (Profile) -->
+        <div id="mine-view" class="hidden p-6">
+            <div class="bg-white rounded-[40px] p-8 shadow-xl border border-gray-50 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-24 bg-[#FFCD00]"></div>
+                <div class="relative z-10">
+                    <img id="profile-img" src="https://ui-avatars.com/api/?name=User" class="w-24 h-24 rounded-full border-4 border-white mx-auto shadow-lg mb-4">
+                    <h2 id="profile-name" class="text-2xl font-black italic">Alii</h2>
+                    <p id="profile-email" class="text-[10px] text-gray-400 font-bold mb-8">awaking09@gmail.com</p>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-3xl border border-gray-100">
+                            <p class="text-[9px] font-black text-gray-400 uppercase">TASKS</p>
+                            <p class="text-xl font-black" id="tasks-count">12</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-3xl border border-gray-100">
+                            <p class="text-[9px] font-black text-gray-400 uppercase">RANK</p>
+                            <p class="text-xl font-black">#42</p>
+                        </div>
+                    </div>
+
+                    <button onclick="logout()" class="w-full mt-10 bg-gray-50 text-gray-400 py-4 rounded-2xl font-black text-sm active:bg-gray-100 transition-all">Sign Out Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav id="bottom-nav" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#FFCD00] h-20 flex items-center justify-around rounded-t-[35px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-[60]">
+        <button onclick="showSection('home')" class="nav-btn tab-active flex flex-col items-center">
+            <i class="fas fa-home text-lg"></i>
+            <span class="text-[9px] font-black mt-1">HOME</span>
+        </button>
+        <button onclick="showSection('tasks')" class="nav-btn flex flex-col items-center text-black/30">
+            <i class="fas fa-tasks text-lg"></i>
+            <span class="text-[9px] font-black mt-1">TASKS</span>
+        </button>
+        <div class="relative -mt-12 group cursor-pointer" onclick="showSection('earn')">
+            <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white shadow-2xl border-4 border-[#FFCD00] transform active:scale-90 transition-all">
+                <i class="fas fa-bolt text-2xl"></i>
+            </div>
+            <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-black">EARN</span>
+        </div>
+        <button onclick="showSection('agent')" class="nav-btn flex flex-col items-center text-black/30">
+            <i class="fas fa-users text-lg"></i>
+            <span class="text-[9px] font-black mt-1">AGENT</span>
+        </button>
+        <button onclick="showSection('mine')" class="nav-btn flex flex-col items-center text-black/30">
+            <i class="fas fa-user text-lg"></i>
+            <span class="text-[9px] font-black mt-1">MINE</span>
+        </button>
+    </nav>
+
+    <!-- Success Modal -->
+    <div id="modal" class="fixed inset-0 bg-black/60 z-[200] hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-[40px] p-8 w-full max-w-xs text-center animate-bounce-short">
+            <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fas fa-check"></i>
+            </div>
+            <h3 class="text-xl font-black mb-2">Mubarak Ho!</h3>
+            <p id="modal-text" class="text-gray-500 font-bold text-sm mb-6">Coins has been added to your wallet.</p>
+            <button onclick="closeModal()" class="w-full bg-[#FFCD00] py-4 rounded-2xl font-black active:scale-95">CONTINUE</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let balance = 0.00;
+        let tasksDone = 12;
+
+        // Functions
+        function login() {
+            document.getElementById('auth-screen').style.transform = 'translateY(-100%)';
+            setTimeout(() => {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('bottom-nav').classList.remove('hidden');
+            }, 500);
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        function showSection(section) {
+            // Hide all
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('mine-view').classList.add('hidden');
+            
+            // Show target
+            if(section === 'home') document.getElementById('home-view').classList.remove('hidden');
+            if(section === 'mine') document.getElementById('mine-view').classList.remove('hidden');
+
+            // Update nav buttons
+            const btns = document.querySelectorAll('.nav-btn');
+            btns.forEach(btn => btn.classList.remove('tab-active', 'text-black'));
+            btns.forEach(btn => btn.classList.add('text-black/30'));
+            
+            // Highlight active (simplified)
+            event.currentTarget.classList.add('tab-active', 'text-black');
+        }
+
+        function completeTask(id, reward) {
+            balance += reward;
+            tasksDone += 1;
+            document.getElementById('user-balance').innerText = balance.toFixed(2);
+            document.getElementById('tasks-count').innerText = tasksDone;
+            
+            document.getElementById('modal-text').innerText = `+${reward} Coins added to your account!`;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // Add some bounce to success
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes bounce-short {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            .animate-bounce-short { animation: bounce-short 0.3s ease-out; }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
