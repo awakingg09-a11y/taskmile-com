@@ -3,122 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskMile - Official App</title>
+    <title>TaskMile - Real Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
-        body { font-family: 'Roboto', sans-serif; background-color: #FDFDFD; user-select: none; margin: 0; padding-bottom: 70px; }
+        
+        body { font-family: 'Roboto', sans-serif; background-color: #FDFDFD; user-select: none; margin: 0; }
         .bg-theme-yellow { background-color: #FFCD00; }
         .bg-theme-green { background-color: #069837; }
-        .logo-text { font-weight: 900; font-style: italic; color: #FFCD00; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
+        .bg-theme-blue { background-color: #1A70F5; }
+        .text-theme-red { color: #E72525; }
         
+        .logo-text {
+            font-weight: 900; font-style: italic; color: #FFCD00;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+
         /* Auth Screen */
         #auth-screen { position: fixed; inset: 0; background: #FFCD00; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .auth-card { background: white; width: 100%; max-width: 350px; padding: 40px 30px; border-radius: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; }
-        .google-btn { width: 100%; background: white; border: 2px solid #f0f0f0; padding: 15px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .google-btn:active { transform: scale(0.95); background: #fafafa; }
+        .auth-card { background: white; width: 100%; max-width: 350px; padding: 40px 30px; border-radius: 40px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .google-btn { width: 100%; background: white; border: 2px solid #f0f0f0; padding: 15px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: bold; cursor: pointer; }
 
-        /* Navigation */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #FFCD00; height: 65px; display: flex; justify-content: space-around; align-items: center; border-radius: 25px 25px 0 0; z-index: 1000; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #000; text-decoration: none; font-size: 10px; font-weight: bold; }
-        .nav-item i { font-size: 20px; margin-bottom: 2px; }
+        /* App Views */
+        .app-view { display: none; padding-bottom: 80px; }
+        .app-view.active { display: block; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Views */
-        .app-view { display: none; padding: 15px; animation: slideUp 0.3s ease-out; }
-        .app-view.active { display: block; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* Task Tags & Hero */
+        .hero-banner { background: linear-gradient(180deg, #F9FBED 0%, #E6F3E3 100%); border: 1px solid #E8E8E8; border-radius: 15px; }
+        .task-tag { background-color: #F0F6FF; color: #4A8CFF; font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+        .badge-hot { background: #FF1A1A; color: white; font-size: 8px; font-weight: bold; padding: 2px 5px; border-radius: 4px; position: absolute; top: -5px; left: -5px; }
 
-        /* Profile Card */
-        .profile-card { background: white; border-radius: 35px; border: 1px solid #eee; padding: 30px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #FFCD00; height: 60px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border-radius: 15px 15px 0 0; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; color: #444; }
+        .nav-item.active { color: #000; }
+        .earn-btn { width: 50px; height: 50px; background: linear-gradient(180deg, #FF6A34, #E93116); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #FFCD00; margin-top: -30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
-    <!-- Login Screen -->
+    <!-- Login Area -->
     <div id="auth-screen">
         <div class="auth-card">
             <div class="text-5xl logo-text mb-4 italic">TaskMile</div>
-            <h2 class="text-xl font-bold text-gray-800">Welcome</h2>
-            <p class="text-gray-400 text-sm mb-8">Login karke paise kamana shuru karein</p>
+            <h2 class="text-xl font-bold mb-2">Login Required</h2>
+            <p class="text-gray-400 text-sm mb-8">Pehlay login karein phir paise kamayein</p>
             <button onclick="handleGoogleLogin()" class="google-btn">
                 <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" class="w-6 h-6">
-                <span>Google Login</span>
+                <span>Sign in with Google</span>
             </button>
         </div>
     </div>
 
-    <!-- Main App UI -->
+    <!-- Main App Content (TaskMint Style) -->
     <div id="main-app" style="display:none;">
-        <header class="bg-theme-yellow p-4 flex justify-between items-center sticky top-0 z-50">
+        <header class="bg-theme-yellow px-4 py-3 flex justify-between items-center sticky top-0 z-50">
             <div class="text-2xl logo-text">TaskMile</div>
-            <div class="flex items-center gap-2">
-                <div class="bg-black/10 rounded-full px-3 py-1 flex items-center gap-1 font-bold text-sm">
-                    <span class="text-yellow-600">PKR</span>
-                    <span id="balance">0.00</span>
+            <div class="flex items-center space-x-2">
+                <div class="bg-white/30 px-3 py-1 rounded-full flex items-center space-x-1">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1490/1490853.png" class="w-4 h-4">
+                    <span class="font-bold text-white text-sm" id="balance">0.00</span>
                 </div>
-                <img id="u-img-nav" class="w-8 h-8 rounded-full border-2 border-white" src="">
+                <img id="u-img-nav" class="w-8 h-8 rounded-full border border-white/50" src="">
             </div>
         </header>
 
-        <!-- Home Page -->
+        <!-- Home View -->
         <div id="view-home" class="app-view active">
-            <div class="bg-green-600 rounded-2xl p-4 text-white flex justify-between items-center mb-4">
-                <div>
-                    <h2 class="font-bold">Daily Tasks</h2>
-                    <p class="text-xs opacity-80">Earn up to 5000 today</p>
+            <div class="bg-theme-green px-4 py-2 flex justify-between items-center text-white text-xs font-bold">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-download"></i>
+                    <span>Download TaskMile App</span>
                 </div>
-                <i class="fas fa-coins text-3xl text-yellow-300"></i>
+                <span>>>></span>
             </div>
-            
-            <h3 class="font-bold mb-3">Available Tasks</h3>
-            <div class="space-y-3">
-                <!-- Task item -->
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm">
+
+            <div class="p-3">
+                <div class="hero-banner p-4 flex">
+                    <div class="w-3/5">
+                        <h2 class="font-bold text-lg leading-tight">Complete Small Tasks</h2>
+                        <p class="text-[10px] text-gray-500">Daily Tasks, Limited Spots</p>
+                        <div class="flex items-center mt-2 text-[#E99700] font-bold">
+                            <i class="fas fa-coins mr-1"></i> 600-3,000 Coins
+                        </div>
+                        <button class="bg-theme-green text-white px-4 py-1.5 rounded-full text-[10px] font-bold mt-3">Get Started</button>
+                    </div>
+                    <div class="w-2/5 flex items-end">
+                        <img src="https://img.freepik.com/free-photo/happy-young-girl-showing-blank-smartphone-screen_171337-14234.jpg?w=200" class="rounded-lg">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ticker -->
+            <div class="bg-[#FFFDF5] border-y border-gray-100 py-2 px-3 overflow-hidden whitespace-nowrap text-[10px] text-gray-400">
+                <i class="fas fa-volume-up text-orange-400 mr-2"></i>
+                User Ab***99 withdrew 500 PKR • User Km***12 earned 1500 coins • Task Success!
+            </div>
+
+            <!-- TOP Button -->
+            <div class="p-3">
+                <div class="bg-theme-blue text-white py-3 rounded-full text-center font-bold text-sm">TOP</div>
+            </div>
+
+            <!-- Task List -->
+            <div class="px-3 space-y-3 mt-2">
+                <div class="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600"><i class="fab fa-youtube"></i></div>
+                        <div class="relative">
+                            <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black italic">TM</div>
+                            <span class="badge-hot">HOT</span>
+                        </div>
                         <div>
-                            <p class="text-sm font-bold">Watch Video</p>
-                            <p class="text-[10px] text-gray-400">Time: 30s</p>
+                            <h3 class="font-bold text-xs">Beginner Experience Task</h3>
+                            <div class="flex gap-1 mt-1"><span class="task-tag">High Reward</span></div>
                         </div>
                     </div>
-                    <span class="text-green-600 font-bold text-sm">+25.00</span>
+                    <div class="text-right">
+                        <p class="text-theme-red font-bold">50.00</p>
+                        <p class="text-[8px] text-gray-400">99824 left</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-purple-900 rounded-full flex items-center justify-center text-white text-[10px] font-bold">CZ777</div>
+                        <div>
+                            <h3 class="font-bold text-xs">Task1 Cz777</h3>
+                            <div class="flex gap-1 mt-1"><span class="task-tag">Play Game</span></div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-theme-red font-bold">1500.00</p>
+                        <p class="text-[8px] text-gray-400">9936 left</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Profile Page (Jo aapne screenshot mein dekha) -->
+        <!-- Mine View -->
         <div id="view-mine" class="app-view">
-            <div class="profile-card mt-4">
-                <img id="u-img-big" class="w-24 h-24 rounded-full mx-auto border-4 border-yellow-400 mb-4" src="">
-                <h2 id="u-name" class="text-2xl font-black italic">Loading...</h2>
-                <p id="u-email" class="text-gray-400 text-xs mb-8"></p>
-
-                <div class="grid grid-cols-2 gap-4 mb-8">
-                    <div class="bg-gray-50 p-4 rounded-2xl">
-                        <p class="text-[10px] font-bold text-gray-400">TASKS</p>
-                        <p class="text-xl font-black">12</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-2xl">
-                        <p class="text-[10px] font-bold text-gray-400">RANK</p>
-                        <p class="text-xl font-black">#42</p>
-                    </div>
-                </div>
-
-                <button onclick="logout()" class="w-full py-4 bg-gray-100 rounded-2xl font-bold text-gray-400 hover:text-red-500">Sign Out Account</button>
+            <div class="p-6 text-center">
+                <img id="u-img-big" class="w-24 h-24 rounded-full mx-auto border-4 border-theme-yellow mb-4" src="">
+                <h2 id="u-name" class="text-xl font-black italic">User Name</h2>
+                <p id="u-email" class="text-gray-400 text-xs mb-6"></p>
+                <button onclick="logout()" class="w-full py-4 bg-gray-100 rounded-2xl font-bold text-red-500">Sign Out</button>
             </div>
         </div>
 
-        <!-- Bottom Navigation -->
+        <!-- Navigation -->
         <nav class="bottom-nav">
-            <div class="nav-item" onclick="switchTab('home')">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
-            </div>
-            <div class="nav-item" onclick="switchTab('mine')">
-                <i class="fas fa-user"></i>
-                <span>Mine</span>
-            </div>
+            <div class="nav-item active" onclick="switchTab('home')"><i class="fas fa-home text-lg"></i><span>Home</span></div>
+            <div class="nav-item" onclick="switchTab('tasks')"><i class="fas fa-tasks text-lg"></i><span>Tasks</span></div>
+            <div class="nav-item"><div class="earn-btn text-white text-xl"><i class="fas fa-bolt"></i></div><span>Earn</span></div>
+            <div class="nav-item" onclick="switchTab('agent')"><i class="fas fa-users text-lg"></i><span>Agent</span></div>
+            <div class="nav-item" onclick="switchTab('mine')"><i class="fas fa-user text-lg"></i><span>Mine</span></div>
         </nav>
     </div>
 
@@ -140,18 +180,15 @@
         const provider = new GoogleAuthProvider();
 
         window.handleGoogleLogin = async () => {
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (e) {
-                console.error("Login Error", e);
-            }
+            try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); }
         };
 
         window.logout = () => signOut(auth);
 
         window.switchTab = (tab) => {
             document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-' + tab).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if(document.getElementById('view-' + tab)) document.getElementById('view-' + tab).classList.add('active');
         };
 
         onAuthStateChanged(auth, (user) => {
